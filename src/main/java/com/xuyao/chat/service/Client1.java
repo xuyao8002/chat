@@ -11,9 +11,8 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LineBasedFrameDecoder;
 
 import java.nio.charset.Charset;
-import java.util.concurrent.TimeUnit;
 
-public class Client {
+public class Client1 {
 
     private static final Charset CHARSET_UTF8 = Charset.forName("UTF-8");
 
@@ -51,21 +50,16 @@ public class Client {
     }
     public static void main(String[] args) {
         int port = 8888;
-        Client client = new Client();
+        Client1 client = new Client1();
         try {
-            new Thread(() -> {
-                try {
-                    TimeUnit.SECONDS.sleep(3L);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-                Message message = new Message();
-                message.setType(2);
-                message.setFromId(1L);
-                message.setToId(2L);
-                message.setMsg("生日快乐！\r\n哈哈！");
-                sendMsg(JsonUtil.toString(message));
-            }).start();
+//            new Thread(() -> {
+//                try {
+//                    TimeUnit.SECONDS.sleep(3L);
+//                } catch (InterruptedException e) {
+//                    throw new RuntimeException(e);
+//                }
+//                sendMsg("生日快乐！");
+//            }).start();
             client.connect(port, "localhost");
         } catch (Exception e) {
             e.printStackTrace();
@@ -79,10 +73,13 @@ public class Client {
         public void channelActive(ChannelHandlerContext ctx) {
             this.context = ctx;
             Message message = new Message();
-            message.setFromId(1L);
+            message.setFromId(2L);
             message.setType(1);
+            message.setMsg("");
+            message.setToId(0L);
             //换行符
             byte[] req = (JsonUtil.toString(message) + System.getProperty("line.separator")).getBytes(CHARSET_UTF8);
+//            byte[] req = (sendMsg + System.getProperty("line.separator")).getBytes(CHARSET_UTF8);
             ByteBuf msg = ctx.alloc().buffer();
             msg.writeBytes(req);
             ctx.channel().writeAndFlush(msg);

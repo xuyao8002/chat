@@ -1,5 +1,7 @@
 package com.xuyao.chat.service;
 
+import com.xuyao.chat.bean.dto.Message;
+import com.xuyao.chat.util.JsonUtil;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -10,10 +12,15 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LineBasedFrameDecoder;
 
 import java.nio.charset.Charset;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Server {
 
     private static final Charset CHARSET_UTF8 = Charset.forName("UTF-8");
+
+    private static Map<Long, ChannelHandlerContext> contextMap = new ConcurrentHashMap<>();
 
     public void bind(int port) throws Exception {
         EventLoopGroup bossGroup = new NioEventLoopGroup();
@@ -37,7 +44,7 @@ public class Server {
         protected void initChannel(SocketChannel ch) {
             ch.pipeline()
                     //换行符
-                    .addLast(new LineBasedFrameDecoder(50))
+                    .addLast(new LineBasedFrameDecoder(500))
                     .addLast(new ServerHandler());
         }
     }
@@ -54,10 +61,19 @@ public class Server {
             ByteBuf buf = (ByteBuf) msg;
             String body = buf.toString(CHARSET_UTF8);
             System.out.println("read from client : " + body);
-            //换行符
-            body = body + System.getProperty("line.separator");
-            ByteBuf resp = Unpooled.copiedBuffer(body.getBytes(CHARSET_UTF8));
-            ctx.write(resp);
+            Message message = JsonUtil.parseObject(body, Message.class);
+            if (Objects.equals(message.getType(), 1)) {
+                contextMap.put(message.getFromId(), ctx);
+                System.out.println("user注册了,userId:" + message.getFromId() + "," + ctx);
+            }else{
+                ChannelHandlerContext ctxTo = contextMap.get(message.getToId());
+                if (ctxTo != null) {
+                    //换行符
+                    body = body + System.getProperty("line.separator");
+                    ByteBuf resp = Unpooled.copiedBuffer(body.getBytes(CHARSET_UTF8));
+                    ctxTo.writeAndFlush(resp);
+                }
+            }
         }
 
         @Override
