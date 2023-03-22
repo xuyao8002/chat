@@ -10,12 +10,15 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LineBasedFrameDecoder;
+import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Component
 public class Server {
 
     private static final Charset CHARSET_UTF8 = Charset.forName("UTF-8");
@@ -37,6 +40,7 @@ public class Server {
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
         }
+
     }
 
     private class ChildChannelHandler extends ChannelInitializer<SocketChannel> {
@@ -52,6 +56,18 @@ public class Server {
     public static void main(String[] args) throws Exception {
         int port = 8888;
         new Server().bind(port);
+    }
+
+    @PostConstruct
+    public void init() {
+        int port = 8888;
+        new Thread(() -> {
+            try {
+                new Server().bind(port);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }).start();
     }
 
     class ServerHandler extends SimpleChannelInboundHandler<Object> {
