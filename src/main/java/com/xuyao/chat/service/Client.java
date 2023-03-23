@@ -9,40 +9,38 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LineBasedFrameDecoder;
+import lombok.extern.slf4j.Slf4j;
 
 import java.nio.charset.Charset;
-import java.util.concurrent.TimeUnit;
+import java.util.HashMap;
+import java.util.Map;
 
+@Slf4j
 public class Client {
 
     private static final Charset CHARSET_UTF8 = Charset.forName("UTF-8");
-
     private static ClientHandler handler;
+    private static Map<Long, ClientHandler> handlerMap = new HashMap<>();
+    private int port = 8888;
+    private String ip = "localhost";
 
-    public static void sendMsg(String message){
-        ChannelHandlerContext context = handler.getContext();
-        byte[] req = (message + System.getProperty("line.separator")).getBytes(CHARSET_UTF8);
-        ByteBuf msg = context.alloc().buffer();
-        msg.writeBytes(req);
-        context.channel().writeAndFlush(msg);
-    }
-
-    public void connect(int port, String host) throws Exception{
+    public void connect(int port, String host, Long userId) throws Exception{
         EventLoopGroup group = new NioEventLoopGroup();
         Bootstrap client = new Bootstrap();
-        handler = new ClientHandler();
+        handler = new ClientHandler(userId);
+        handlerMap.put(userId, handler);
         try {
             client.group(group)
-                    .channel(NioSocketChannel.class)
-                    .option(ChannelOption.TCP_NODELAY, true)
-                    .handler(new ChannelInitializer<SocketChannel>() {
-                        @Override
-                        protected void initChannel(SocketChannel ch) throws Exception {
-                            ch.pipeline()
-                                    .addLast(new LineBasedFrameDecoder(500))
-                                    .addLast(handler);
-                        }
-                    });
+            .channel(NioSocketChannel.class)
+            .option(ChannelOption.TCP_NODELAY, true)
+            .handler(new ChannelInitializer<SocketChannel>() {
+                @Override
+                protected void initChannel(SocketChannel ch) {
+                    ch.pipeline()
+                    .addLast(new LineBasedFrameDecoder(500))
+                    .addLast(handler);
+                }
+            });
             ChannelFuture future = client.connect(host, port).sync();
             future.channel().closeFuture().sync();
         } finally {
@@ -50,58 +48,44 @@ public class Client {
         }
     }
 
-    public void init(){
-        int port = 8888;
-        Client client = new Client();
-        new Thread(() -> {
-            try {
-                client.connect(port, "localhost");
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }).start();
-    }
-
-    public void sendMessage(Long toId, String msg){
-        Message message = new Message();
-        message.setType(2);
-        message.setMsg(msg);
-        message.setFromId(1L);
-        message.setToId(toId);
-        sendMsg(JsonUtil.toString(message));
-    }
-
-    public static void main(String[] args) {
-        int port = 8888;
-        Client client = new Client();
-        try {
+    public void init(Long userId){
+        if (!handlerMap.containsKey(userId)) {
+            Client client = new Client();
             new Thread(() -> {
                 try {
-                    TimeUnit.SECONDS.sleep(3L);
-                } catch (InterruptedException e) {
+                    client.connect(port, ip, userId);
+                } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
-                Message message = new Message();
-                message.setType(2);
-                message.setFromId(1L);
-                message.setToId(2L);
-                message.setMsg("生日快乐！\r\n哈哈！");
-                sendMsg(JsonUtil.toString(message));
             }).start();
-            client.connect(port, "localhost");
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 
+    public void sendMessage(Long fromId, Long toId, String msg){
+        Message message = new Message();
+        message.setType(2);
+        message.setMsg(msg);
+        message.setFromId(fromId);
+        message.setToId(toId);
+        ChannelHandlerContext context = handlerMap.get(fromId).getContext();
+        byte[] req = (JsonUtil.toString(message) + System.getProperty("line.separator")).getBytes(CHARSET_UTF8);
+        ByteBuf buf = context.alloc().buffer();
+        buf.writeBytes(req);
+        context.channel().writeAndFlush(buf);
+    }
+
     class ClientHandler extends ChannelInboundHandlerAdapter {
+        public ClientHandler(Long userId) {
+            this.userId = userId;
+        }
+
+        private Long userId;
         private ChannelHandlerContext context;
-//        private String sendMsg = "你好啊！";
         @Override
         public void channelActive(ChannelHandlerContext ctx) {
             this.context = ctx;
             Message message = new Message();
-            message.setFromId(1L);
+            message.setFromId(userId);
             message.setType(1);
             //换行符
             byte[] req = (JsonUtil.toString(message) + System.getProperty("line.separator")).getBytes(CHARSET_UTF8);
@@ -114,7 +98,8 @@ public class Client {
         public void channelRead(ChannelHandlerContext ctx, Object msg) {
             ByteBuf buf = (ByteBuf)msg;
             String body = buf.toString(CHARSET_UTF8);
-            System.out.println("客户端"+this.getClass()+"收到消息: " + body);
+            Message message = JsonUtil.parseObject(body, Message.class);
+            log.info("用户:{}收到用户:{}的消息:{}，时间:{}", userId, message.getFromId(), message.getMsg(), message.getTime());
         }
 
         @Override

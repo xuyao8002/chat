@@ -10,6 +10,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LineBasedFrameDecoder;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -19,11 +20,14 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
+@Slf4j
 public class Server {
 
     private static final Charset CHARSET_UTF8 = Charset.forName("UTF-8");
 
     private static Map<Long, ChannelHandlerContext> contextMap = new ConcurrentHashMap<>();
+
+    private int port = 8888;
 
     public void bind(int port) throws Exception {
         EventLoopGroup bossGroup = new NioEventLoopGroup();
@@ -47,20 +51,14 @@ public class Server {
         @Override
         protected void initChannel(SocketChannel ch) {
             ch.pipeline()
-                    //换行符
-                    .addLast(new LineBasedFrameDecoder(500))
-                    .addLast(new ServerHandler());
+            //换行符
+            .addLast(new LineBasedFrameDecoder(500))
+            .addLast(new ServerHandler());
         }
-    }
-
-    public static void main(String[] args) throws Exception {
-        int port = 8888;
-        new Server().bind(port);
     }
 
     @PostConstruct
     public void init() {
-        int port = 8888;
         new Thread(() -> {
             try {
                 new Server().bind(port);
@@ -76,11 +74,11 @@ public class Server {
         protected void channelRead0(ChannelHandlerContext ctx, Object msg) {
             ByteBuf buf = (ByteBuf) msg;
             String body = buf.toString(CHARSET_UTF8);
-            System.out.println("服务端收到消息 : " + body);
+            log.info("服务端收到消息：{}", body);
             Message message = JsonUtil.parseObject(body, Message.class);
             if (Objects.equals(message.getType(), 1)) {
                 contextMap.put(message.getFromId(), ctx);
-                System.out.println("user注册了,userId:" + message.getFromId() + "," + ctx);
+                log.info("userId:{}注册了", message.getFromId());
             }else{
                 ChannelHandlerContext ctxTo = contextMap.get(message.getToId());
                 if (ctxTo != null) {
