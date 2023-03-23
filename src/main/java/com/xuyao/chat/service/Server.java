@@ -76,7 +76,7 @@ public class Server {
         protected void channelRead0(ChannelHandlerContext ctx, Object msg) {
             ByteBuf buf = (ByteBuf) msg;
             String body = buf.toString(CHARSET_UTF8);
-            System.out.println("read from client : " + body);
+            System.out.println("服务端收到消息 : " + body);
             Message message = JsonUtil.parseObject(body, Message.class);
             if (Objects.equals(message.getType(), 1)) {
                 contextMap.put(message.getFromId(), ctx);

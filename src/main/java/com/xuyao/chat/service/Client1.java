@@ -48,6 +48,28 @@ public class Client1 {
             group.shutdownGracefully();
         }
     }
+
+    public void init(){
+        int port = 8888;
+        Client1 client = new Client1();
+        new Thread(() -> {
+            try {
+                client.connect(port, "localhost");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }).start();
+    }
+
+    public void sendMessage(Long toId, String msg){
+        Message message = new Message();
+        message.setType(2);
+        message.setMsg(msg);
+        message.setFromId(2L);
+        message.setToId(toId);
+        sendMsg(JsonUtil.toString(message));
+    }
+
     public static void main(String[] args) {
         int port = 8888;
         Client1 client = new Client1();
@@ -89,7 +111,7 @@ public class Client1 {
         public void channelRead(ChannelHandlerContext ctx, Object msg) {
             ByteBuf buf = (ByteBuf)msg;
             String body = buf.toString(CHARSET_UTF8);
-            System.out.println("read from server: " + body);
+            System.out.println("客户端"+this.getClass()+"收到消息: " + body);
         }
 
         @Override
