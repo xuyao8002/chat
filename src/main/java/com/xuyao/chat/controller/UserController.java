@@ -1,5 +1,6 @@
 package com.xuyao.chat.controller;
 
+import com.xuyao.chat.bean.dto.Login;
 import com.xuyao.chat.bean.po.User;
 import com.xuyao.chat.service.IUserService;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,11 @@ public class UserController {
     @PostMapping("/register")
     public Object register(@RequestBody User user){
         return userService.register(user);
+    }
+
+    @PostMapping("/login")
+    public Object login(@RequestBody Login login){
+        return userService.login(login);
     }
 
     @GetMapping("/getOne")
