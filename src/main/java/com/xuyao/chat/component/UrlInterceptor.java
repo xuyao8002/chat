@@ -18,7 +18,7 @@ public class UrlInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         String servletPath = request.getServletPath();
-        if (Objects.equals(servletPath, "/error")) {
+        if (Objects.equals(servletPath, "/error") || Objects.equals(servletPath, "/favicon.ico")) {
             return true;
         }
         if (!excludePaths.contains(servletPath)) {

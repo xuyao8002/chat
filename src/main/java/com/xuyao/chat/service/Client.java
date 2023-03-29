@@ -10,12 +10,14 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LineBasedFrameDecoder;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
+@Component
 public class Client {
 
     private static final Charset CHARSET_UTF8 = Charset.forName("UTF-8");
@@ -62,6 +64,12 @@ public class Client {
     }
 
     public void sendMessage(Long fromId, Long toId, String msg){
+        if (!handlerMap.containsKey(fromId)) {
+            throw new RuntimeException(String.format("用户%s未登录", fromId));
+        }
+        if (!handlerMap.containsKey(toId)) {
+            throw new RuntimeException(String.format("目标用户%s未登录", toId));
+        }
         Message message = new Message();
         message.setType(2);
         message.setMsg(msg);
