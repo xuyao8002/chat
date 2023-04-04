@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
 import java.util.Objects;
+import java.util.UUID;
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IUserService {
@@ -21,12 +22,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     }
 
     @Override
-    public boolean login(Login login) {
+    public String login(Login login) {
         User one = super.getOne(Wrappers.lambdaQuery(User.class).eq(User::getUserName, login.getUserName()));
         if(one == null || !Objects.equals(one.getUserPwd(), DigestUtils.md5DigestAsHex(login.getUserPwd().getBytes()))){
             throw new RuntimeException("用户名或密码错误");
         }
-        return true;
+        return UUID.randomUUID().toString().replace("-", "");
     }
 
     @Override

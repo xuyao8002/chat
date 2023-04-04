@@ -24,9 +24,4 @@ public class UserController {
         return userService.login(login);
     }
 
-    @GetMapping("/getOne")
-    public Object getOne(@RequestParam Long userId){
-        return userService.getOne(userId);
-    }
-
 }

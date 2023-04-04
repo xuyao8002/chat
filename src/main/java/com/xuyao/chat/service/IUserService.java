@@ -8,7 +8,7 @@ public interface IUserService extends IService<User> {
 
     boolean register(User user);
 
-    boolean login(Login login);
+    String login(Login login);
 
     User getOne(Long userId);
 
