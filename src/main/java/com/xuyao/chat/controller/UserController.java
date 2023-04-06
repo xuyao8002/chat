@@ -1,5 +1,6 @@
 package com.xuyao.chat.controller;
 
+import com.xuyao.chat.bean.Result;
 import com.xuyao.chat.bean.dto.Login;
 import com.xuyao.chat.bean.po.User;
 import com.xuyao.chat.service.IUserService;
@@ -16,12 +17,12 @@ public class UserController {
 
     @PostMapping("/register")
     public Object register(@RequestBody User user){
-        return userService.register(user);
+        return Result.success(userService.register(user));
     }
 
     @PostMapping("/login")
     public Object login(@RequestBody Login login){
-        return userService.login(login);
+        return Result.success(userService.login(login));
     }
 
 }

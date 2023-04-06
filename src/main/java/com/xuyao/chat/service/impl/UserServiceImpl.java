@@ -4,13 +4,18 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xuyao.chat.bean.dto.Login;
 import com.xuyao.chat.bean.po.User;
+import com.xuyao.chat.bean.vo.UserVO;
 import com.xuyao.chat.dao.UserMapper;
 import com.xuyao.chat.service.IUserService;
+import com.xuyao.chat.util.JsonUtil;
+import com.xuyao.chat.util.RedisUtil;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IUserService {
@@ -27,7 +32,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         if(one == null || !Objects.equals(one.getUserPwd(), DigestUtils.md5DigestAsHex(login.getUserPwd().getBytes()))){
             throw new RuntimeException("用户名或密码错误");
         }
-        return UUID.randomUUID().toString().replace("-", "");
+        UserVO userVO = new UserVO();
+        BeanUtils.copyProperties(one, userVO);
+        String token = UUID.randomUUID().toString().replace("-", "");
+        RedisUtil.set(token, JsonUtil.toString(userVO),120, TimeUnit.MINUTES);
+        return token;
     }
 
     @Override

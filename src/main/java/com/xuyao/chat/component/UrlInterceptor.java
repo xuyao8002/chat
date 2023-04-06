@@ -1,5 +1,6 @@
 package com.xuyao.chat.component;
 
+import com.xuyao.chat.util.RedisUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -10,6 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 @Component
 public class UrlInterceptor implements HandlerInterceptor {
@@ -32,7 +34,11 @@ public class UrlInterceptor implements HandlerInterceptor {
             }
         }
         if (StringUtils.hasText(token)) {
-
+            String userInfo = RedisUtil.get(token);
+            if (StringUtils.hasText(userInfo)) {
+                RedisUtil.set(token, userInfo, 120, TimeUnit.MINUTES);
+                return true;
+            }
         }
         String servletPath = request.getServletPath();
         if (Objects.equals(servletPath, "/error") || Objects.equals(servletPath, "/favicon.ico")) {
