@@ -1,5 +1,8 @@
 package com.xuyao.chat.component;
 
+import com.xuyao.chat.bean.vo.UserVO;
+import com.xuyao.chat.util.ContextUtil;
+import com.xuyao.chat.util.JsonUtil;
 import com.xuyao.chat.util.RedisUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -37,6 +40,7 @@ public class UrlInterceptor implements HandlerInterceptor {
             String userInfo = RedisUtil.get(token);
             if (StringUtils.hasText(userInfo)) {
                 RedisUtil.set(token, userInfo, 120, TimeUnit.MINUTES);
+                ContextUtil.setUser(JsonUtil.parseObject(userInfo, UserVO.class));
                 return true;
             }
         }

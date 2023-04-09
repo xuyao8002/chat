@@ -6,7 +6,7 @@ import javax.validation.constraints.NotBlank;
 import java.io.Serializable;
 
 @Data
-public class Login implements Serializable {
+public class Register implements Serializable {
 
     @NotBlank
     private String userName;
