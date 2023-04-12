@@ -32,8 +32,8 @@ public class CharController {
     }
 
     @RequestMapping("/sendMessage")
-    public Object sendMessage(@RequestParam Long fromId, @RequestParam Long toId, @RequestParam String msg){
-        client.sendMessage(fromId, toId, msg);
+    public Object sendMessage(@RequestParam Long toId, @RequestParam String msg){
+        client.sendMessage(toId, msg);
         return Result.success("ok");
     }
 

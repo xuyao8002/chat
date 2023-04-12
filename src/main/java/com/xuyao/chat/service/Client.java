@@ -1,6 +1,8 @@
 package com.xuyao.chat.service;
 
 import com.xuyao.chat.bean.dto.Message;
+import com.xuyao.chat.bean.vo.UserVO;
+import com.xuyao.chat.util.ContextUtil;
 import com.xuyao.chat.util.JsonUtil;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -63,7 +65,9 @@ public class Client {
         }
     }
 
-    public void sendMessage(Long fromId, Long toId, String msg){
+    public void sendMessage(Long toId, String msg){
+        UserVO user = ContextUtil.getUser();
+        Long fromId = user.getUserId();
         if (!handlerMap.containsKey(fromId)) {
             throw new RuntimeException(String.format("用户%s未登录", fromId));
         }
