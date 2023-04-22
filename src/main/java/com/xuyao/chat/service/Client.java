@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 @Slf4j
 @Component
@@ -73,6 +74,9 @@ public class Client {
         }
         if (!handlerMap.containsKey(toId)) {
             throw new RuntimeException(String.format("目标用户%s未登录", toId));
+        }
+        if (Objects.equals(fromId, toId)) {
+            throw new RuntimeException(String.format("用户%s不能给自己发消息", fromId));
         }
         Message message = new Message();
         message.setType(2);
