@@ -1,7 +1,6 @@
 package com.xuyao.chat.service;
 
 import com.xuyao.chat.bean.vo.Result;
-import com.xuyao.chat.bean.vo.Results;
 import com.xuyao.chat.dao.IDAllocDao;
 import com.xuyao.chat.dao.impl.IDAllocDaoImpl;
 import com.xuyao.chat.service.impl.SegmentIDGenImpl;
@@ -39,9 +38,6 @@ public class SegmentService {
 
     public Result getId(String key) {
         return idGen.get(key);
-    }
-    public Results getIdList(String key, int count) {
-        return idGen.getList(key, count);
     }
 
     public SegmentIDGenImpl getIdGen() {

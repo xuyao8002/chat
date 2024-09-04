@@ -3,7 +3,6 @@ package com.xuyao.chat.service.impl;
 
 import com.xuyao.chat.bean.po.LeafAlloc;
 import com.xuyao.chat.bean.vo.Result;
-import com.xuyao.chat.bean.vo.Results;
 import com.xuyao.chat.bean.vo.Status;
 import com.xuyao.chat.dao.IDAllocDao;
 import com.xuyao.chat.other.Segment;
@@ -134,17 +133,8 @@ public class SegmentIDGenImpl implements IDGen {
 
     @Override
     public Result get(final String key) {
-        Results list = getList(key, 1);
-        if (list.getStatus() == Status.SUCCESS) {
-            return new Result(list.getIds().get(0), list.getStatus());
-        }
-        return new Result(-1, list.getStatus());
-    }
-
-    @Override
-    public Results getList(String key, int count) {
         if (!initOK) {
-            return new Results(null, Status.EXCEPTION);
+            return new Result(EXCEPTION_ID_IDCACHE_INIT_FALSE, Status.EXCEPTION);
         }
         if (cache.containsKey(key)) {
             SegmentBuffer buffer = cache.get(key);
@@ -152,7 +142,7 @@ public class SegmentIDGenImpl implements IDGen {
                 synchronized (buffer) {
                     if (!buffer.isInitOk()) {
                         try {
-                            updateSegmentFromDb(key, buffer.getCurrent(), count);
+                            updateSegmentFromDb(key, buffer.getCurrent());
                             logger.info("Init buffer. Update leafkey {} {} from db", key, buffer.getCurrent());
                             buffer.setInitOk(true);
                         } catch (Exception e) {
@@ -161,29 +151,23 @@ public class SegmentIDGenImpl implements IDGen {
                     }
                 }
             }
-            return getIdFromSegmentBuffer(cache.get(key), count);
+            return getIdFromSegmentBuffer(cache.get(key));
         }
-        return new Results(null, Status.EXCEPTION);
+        return new Result(EXCEPTION_ID_KEY_NOT_EXISTS, Status.EXCEPTION);
     }
 
-    public void updateSegmentFromDb(String key, Segment segment, int count) {
+    public void updateSegmentFromDb(String key, Segment segment) {
 //        StopWatch sw = new Slf4JStopWatch();
         SegmentBuffer buffer = segment.getBuffer();
         LeafAlloc leafAlloc;
         if (!buffer.isInitOk()) {
-            LeafAlloc temp = new LeafAlloc();
-            temp.setKey(key);
-            temp.setStep(count);
-            leafAlloc = dao.updateMaxIdByCustomStepAndGetLeafAlloc(temp);
-            buffer.setStep(Math.max(count, leafAlloc.getStep()));
+            leafAlloc = dao.updateMaxIdAndGetLeafAlloc(key);
+            buffer.setStep(leafAlloc.getStep());
             buffer.setMinStep(leafAlloc.getStep());//leafAlloc中的step为DB中的step
         } else if (buffer.getUpdateTimestamp() == 0) {
-            LeafAlloc temp = new LeafAlloc();
-            temp.setKey(key);
-            temp.setStep(count);
-            leafAlloc = dao.updateMaxIdByCustomStepAndGetLeafAlloc(temp);
+            leafAlloc = dao.updateMaxIdAndGetLeafAlloc(key);
             buffer.setUpdateTimestamp(System.currentTimeMillis());
-            buffer.setStep(Math.max(count, leafAlloc.getStep()));
+            buffer.setStep(leafAlloc.getStep());
             buffer.setMinStep(leafAlloc.getStep());//leafAlloc中的step为DB中的step
         } else {
             long duration = System.currentTimeMillis() - buffer.getUpdateTimestamp();
@@ -216,32 +200,25 @@ public class SegmentIDGenImpl implements IDGen {
 //        sw.stop("updateSegmentFromDb", key + " " + segment);
     }
 
-    public Results getIdFromSegmentBuffer(final SegmentBuffer buffer, int count) {
-        int tmpC = count;
-        List<Long> values = new ArrayList<>();
+    public Result getIdFromSegmentBuffer(final SegmentBuffer buffer) {
         while (true) {
             buffer.rLock().lock();
-
             try {
                 final Segment segment = buffer.getCurrent();
                 if (!buffer.isNextReady() && (segment.getIdle() < 0.9 * segment.getStep()) && buffer.getThreadRunning().compareAndSet(false, true)) {
                     service.execute(new Runnable() {
                         @Override
                         public void run() {
-                            logger.info("service.execute");
                             Segment next = buffer.getSegments()[buffer.nextPos()];
                             boolean updateOk = false;
                             try {
-                                long start = System.currentTimeMillis();
-                                updateSegmentFromDb(buffer.getKey(), next, count);
+                                updateSegmentFromDb(buffer.getKey(), next);
                                 updateOk = true;
-                                logger.info("update segment {} from db {}, cost {}", buffer.getKey(), next, System.currentTimeMillis() - start);
+                                logger.info("update segment {} from db {}", buffer.getKey(), next);
                             } catch (Exception e) {
-                                logger.info("service.execute exception: {}", e.getMessage());
                                 logger.warn(buffer.getKey() + " updateSegmentFromDb exception", e);
                             } finally {
                                 if (updateOk) {
-                                    logger.info("service.execute updateOk");
                                     buffer.wLock().lock();
                                     buffer.setNextReady(true);
                                     buffer.getThreadRunning().set(false);
@@ -253,18 +230,9 @@ public class SegmentIDGenImpl implements IDGen {
                         }
                     });
                 }
-
-                while(tmpC > 0){
-                    long value = segment.getValue().getAndIncrement();
-                    if (value < segment.getMax()) {
-                        values.add(value);
-                        tmpC--;
-                    }else{
-                        break;
-                    }
-                }
-                if (tmpC == 0) {
-                    return new Results(values, Status.SUCCESS);
+                long value = segment.getValue().getAndIncrement();
+                if (value < segment.getMax()) {
+                    return new Result(value, Status.SUCCESS);
                 }
             } finally {
                 buffer.rLock().unlock();
@@ -273,24 +241,16 @@ public class SegmentIDGenImpl implements IDGen {
             buffer.wLock().lock();
             try {
                 final Segment segment = buffer.getCurrent();
-                while(tmpC > 0){
-                    long value = segment.getValue().getAndIncrement();
-                    if (value < segment.getMax()) {
-                        values.add(value);
-                        tmpC--;
-                    }else{
-                        break;
-                    }
-                }
-                if (tmpC == 0) {
-                    return new Results(values, Status.SUCCESS);
+                long value = segment.getValue().getAndIncrement();
+                if (value < segment.getMax()) {
+                    return new Result(value, Status.SUCCESS);
                 }
                 if (buffer.isNextReady()) {
                     buffer.switchPos();
                     buffer.setNextReady(false);
                 } else {
                     logger.error("Both two segments in {} are not ready!", buffer);
-//                    return new Results(null, Status.EXCEPTION);
+                    return new Result(EXCEPTION_ID_TWO_SEGMENTS_ARE_NULL, Status.EXCEPTION);
                 }
             } finally {
                 buffer.wLock().unlock();
