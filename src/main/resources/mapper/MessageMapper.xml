@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xuyao.chat.dao.MessageMapper">
+  <resultMap id="BaseResultMap" type="com.xuyao.chat.bean.po.Message">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="from_id" jdbcType="BIGINT" property="fromId" />
+    <result column="to_id" jdbcType="BIGINT" property="toId" />
+    <result column="msg" jdbcType="VARCHAR" property="msg" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="type" jdbcType="INTEGER" property="type" />
+    <result column="is_delete" jdbcType="INTEGER" property="isDelete" />
+    <result column="is_read" jdbcType="INTEGER" property="isRead" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    id, from_id, to_id, msg, create_time, type, is_delete, is_read
+  </sql>
+  <select id="list" parameterType="com.xuyao.chat.bean.dto.MessageDTO" resultMap="BaseResultMap">
+    select 
+        <include refid="Base_Column_List" />
+    from message
+    where from_id = #{fromId} and to_id = #{toId} and is_delete = 0
+    <if test="lastId != null and lastId > 0">
+        and id &lt; #{lastId}
+    </if>
+    union
+    select
+        <include refid="Base_Column_List" />
+        from message
+    where from_id = #{toId} and to_id = #{fromId} and is_delete = 0
+    <if test="lastId != null and lastId > 0">
+      and id &lt; #{lastId}
+    </if>
+    order by create_time desc limit #{pageSize}
+  </select>
+
+
+
+
+</mapper>

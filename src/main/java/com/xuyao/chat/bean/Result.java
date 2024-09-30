@@ -26,4 +26,8 @@ public class Result {
         return new Result(DEFAULT_SUCCESS_CODE, null, data);
     }
 
+    public static Result success(){
+        return new Result(DEFAULT_SUCCESS_CODE, null, null);
+    }
+
 }
