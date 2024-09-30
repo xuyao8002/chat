@@ -15,7 +15,7 @@ import java.io.Serializable;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName("UserRelation")
+@TableName("user_relation")
 public class UserRelation implements Serializable {
 
     @TableId(value = "id", type = IdType.AUTO)

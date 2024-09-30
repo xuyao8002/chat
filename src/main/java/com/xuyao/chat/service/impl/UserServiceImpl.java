@@ -19,9 +19,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
 import javax.annotation.Resource;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IUserService {
@@ -60,12 +63,23 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     }
 
     @Override
-    public User getOne(Long userId) {
+    public User get(Long userId) {
         return super.getOne(Wrappers.lambdaQuery(User.class).eq(User::getUserId, userId));
     }
 
     @Override
     public boolean exist(Long userId) {
         return super.getOne(Wrappers.lambdaQuery(User.class).select(User::getUserId).eq(User::getUserId, userId)) != null;
+    }
+
+    @Override
+    public List<User> list(List<Long> userIds) {
+        return super.list(Wrappers.lambdaQuery(User.class).in(User::getUserId, userIds));
+    }
+
+    @Override
+    public Map<Long, User> userMap(List<Long> userIds) {
+        List<User> list = list(userIds);
+        return list.stream().collect(Collectors.toMap(User::getUserId, user -> user));
     }
 }

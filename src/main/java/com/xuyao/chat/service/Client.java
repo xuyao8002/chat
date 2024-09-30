@@ -1,6 +1,6 @@
 package com.xuyao.chat.service;
 
-import com.xuyao.chat.bean.dto.Message;
+import com.xuyao.chat.bean.dto.MessageDTO;
 import com.xuyao.chat.bean.vo.UserVO;
 import com.xuyao.chat.util.ContextUtil;
 import com.xuyao.chat.util.JsonUtil;
@@ -15,6 +15,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -23,11 +25,11 @@ import java.util.Objects;
 @Component
 public class Client {
 
-    private static final Charset CHARSET_UTF8 = Charset.forName("UTF-8");
+    private static final Charset CHARSET_UTF8 = StandardCharsets.UTF_8;
     private static ClientHandler handler;
-    private static Map<Long, ClientHandler> handlerMap = new HashMap<>();
-    private int port = 8888;
-    private String ip = "localhost";
+    private static final Map<Long, ClientHandler> handlerMap = new HashMap<>();
+    private static final int port = 8888;
+    private static final String ip = "localhost";
 
     public void connect(int port, String host, Long userId) throws Exception{
         EventLoopGroup group = new NioEventLoopGroup();
@@ -78,33 +80,35 @@ public class Client {
         if (Objects.equals(fromId, toId)) {
             throw new RuntimeException(String.format("用户%s不能给自己发消息", fromId));
         }
-        Message message = new Message();
-        message.setType(2);
-        message.setMsg(msg);
-        message.setFromId(fromId);
-        message.setToId(toId);
+        MessageDTO messageDTO = new MessageDTO();
+        messageDTO.setType(2);
+        messageDTO.setMsg(msg);
+        messageDTO.setFromId(fromId);
+        messageDTO.setToId(toId);
+        messageDTO.setCreateTime(LocalDateTime.now());
         ChannelHandlerContext context = handlerMap.get(fromId).getContext();
-        byte[] req = (JsonUtil.toString(message) + System.getProperty("line.separator")).getBytes(CHARSET_UTF8);
+        byte[] req = (JsonUtil.toString(messageDTO) + System.lineSeparator()).getBytes(CHARSET_UTF8);
         ByteBuf buf = context.alloc().buffer();
         buf.writeBytes(req);
         context.channel().writeAndFlush(buf);
     }
 
-    class ClientHandler extends ChannelInboundHandlerAdapter {
+    static class ClientHandler extends ChannelInboundHandlerAdapter {
         public ClientHandler(Long userId) {
             this.userId = userId;
         }
 
-        private Long userId;
+        private final Long userId;
         private ChannelHandlerContext context;
         @Override
         public void channelActive(ChannelHandlerContext ctx) {
             this.context = ctx;
-            Message message = new Message();
-            message.setFromId(userId);
-            message.setType(1);
+            MessageDTO messageDTO = new MessageDTO();
+            messageDTO.setFromId(userId);
+            messageDTO.setType(1);
+            messageDTO.setCreateTime(LocalDateTime.now());
             //换行符
-            byte[] req = (JsonUtil.toString(message) + System.getProperty("line.separator")).getBytes(CHARSET_UTF8);
+            byte[] req = (JsonUtil.toString(messageDTO) + System.lineSeparator()).getBytes(CHARSET_UTF8);
             ByteBuf msg = ctx.alloc().buffer();
             msg.writeBytes(req);
             ctx.channel().writeAndFlush(msg);
@@ -114,8 +118,8 @@ public class Client {
         public void channelRead(ChannelHandlerContext ctx, Object msg) {
             ByteBuf buf = (ByteBuf)msg;
             String body = buf.toString(CHARSET_UTF8);
-            Message message = JsonUtil.parseObject(body, Message.class);
-            log.info("用户:{}收到用户:{}的消息:{}，时间:{}", userId, message.getFromId(), message.getMsg(), message.getTime());
+            MessageDTO messageDTO = JsonUtil.parseObject(body, MessageDTO.class);
+            log.info("用户:{}收到用户:{}的消息:{}，时间:{}", userId, messageDTO.getFromId(), messageDTO.getMsg(), messageDTO.getCreateTime());
         }
 
         @Override

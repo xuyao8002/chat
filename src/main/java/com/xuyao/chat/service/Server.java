@@ -1,6 +1,6 @@
 package com.xuyao.chat.service;
 
-import com.xuyao.chat.bean.dto.Message;
+import com.xuyao.chat.bean.dto.MessageDTO;
 import com.xuyao.chat.util.JsonUtil;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,11 +24,11 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class Server {
 
-    private static final Charset CHARSET_UTF8 = Charset.forName("UTF-8");
+    private static final Charset CHARSET_UTF8 = StandardCharsets.UTF_8;
 
-    private static Map<Long, ChannelHandlerContext> contextMap = new ConcurrentHashMap<>();
+    private static final Map<Long, ChannelHandlerContext> contextMap = new ConcurrentHashMap<>();
 
-    private int port = 8888;
+    private static final int port = 8888;
 
     public void bind(int port) throws Exception {
         EventLoopGroup bossGroup = new NioEventLoopGroup();
@@ -47,7 +48,7 @@ public class Server {
 
     }
 
-    private class ChildChannelHandler extends ChannelInitializer<SocketChannel> {
+    static class ChildChannelHandler extends ChannelInitializer<SocketChannel> {
         @Override
         protected void initChannel(SocketChannel ch) {
             ch.pipeline()
@@ -68,22 +69,22 @@ public class Server {
         }).start();
     }
 
-    class ServerHandler extends SimpleChannelInboundHandler<Object> {
+    static class ServerHandler extends SimpleChannelInboundHandler<Object> {
 
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, Object msg) {
             ByteBuf buf = (ByteBuf) msg;
             String body = buf.toString(CHARSET_UTF8);
             log.info("服务端收到消息：{}", body);
-            Message message = JsonUtil.parseObject(body, Message.class);
-            if (Objects.equals(message.getType(), 1)) {
-                contextMap.put(message.getFromId(), ctx);
-                log.info("userId:{}注册了", message.getFromId());
+            MessageDTO messageDTO = JsonUtil.parseObject(body, MessageDTO.class);
+            if (Objects.equals(messageDTO.getType(), 1)) {
+                contextMap.put(messageDTO.getFromId(), ctx);
+                log.info("userId:{}注册了", messageDTO.getFromId());
             }else{
-                ChannelHandlerContext ctxTo = contextMap.get(message.getToId());
+                ChannelHandlerContext ctxTo = contextMap.get(messageDTO.getToId());
                 if (ctxTo != null) {
                     //换行符
-                    body = body + System.getProperty("line.separator");
+                    body = body + System.lineSeparator();
                     ByteBuf resp = Unpooled.copiedBuffer(body.getBytes(CHARSET_UTF8));
                     ctxTo.writeAndFlush(resp);
                 }

@@ -2,10 +2,7 @@ package com.xuyao.chat.controller;
 
 import com.xuyao.chat.bean.Result;
 import com.xuyao.chat.service.IUserRelationService;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 
@@ -17,8 +14,13 @@ public class FriendController {
     private IUserRelationService userRelationService;
 
     @PostMapping("/add")
-    public Object register(@RequestParam Long friendId){
+    public Object add(@RequestParam Long friendId){
         return Result.success(userRelationService.add(friendId));
+    }
+
+    @GetMapping("/list")
+    public Object list(@RequestParam Long lastId, @RequestParam Integer size){
+        return Result.success(userRelationService.list(lastId, size));
     }
 
 }

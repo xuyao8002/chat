@@ -5,14 +5,21 @@ import com.xuyao.chat.bean.dto.Login;
 import com.xuyao.chat.bean.dto.Register;
 import com.xuyao.chat.bean.po.User;
 
+import java.util.List;
+import java.util.Map;
+
 public interface IUserService extends IService<User> {
 
     boolean register(Register register);
 
     String login(Login login);
 
-    User getOne(Long userId);
+    User get(Long userId);
 
     boolean exist(Long userId);
+
+    List<User> list(List<Long> userIds);
+
+    Map<Long, User> userMap(List<Long> userIds);
 
 }
