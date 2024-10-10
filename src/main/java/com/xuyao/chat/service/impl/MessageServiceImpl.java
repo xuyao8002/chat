@@ -10,13 +10,19 @@ import com.xuyao.chat.dao.MessageMapper;
 import com.xuyao.chat.service.IMessageService;
 import com.xuyao.chat.util.ContextUtil;
 import org.springframework.beans.BeanUtils;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Resource;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message> implements IMessageService {
+
+    @Resource
+    private ApplicationEventPublisher applicationEventPublisher;
 
     @Override
     public boolean add(Message message) {
@@ -38,9 +44,21 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message> impl
     @Override
     public void read(Long fromId) {
         UserVO user = ContextUtil.getUser();
-        super.update(Wrappers.lambdaUpdate(Message.class).eq(Message::getFromId, fromId)
-                .eq(Message::getToId, user.getUserId()).eq(Message::getIsDelete, 0)
-                .eq(Message::getIsRead, 0).set(Message::getIsRead, 1));
+        Message message = new Message();
+        message.setFromId(fromId);
+        message.setToId(user.getUserId());
+        message.setIsRead(1);
+        applicationEventPublisher.publishEvent(message);
+    }
+
+    @Override
+    @Transactional
+    public void read(List<Message> messages) {
+        messages.forEach(message -> {
+            super.update(Wrappers.lambdaUpdate(Message.class).eq(Message::getFromId, message.getFromId())
+                    .eq(Message::getToId, message.getToId()).eq(Message::getIsDelete, 0)
+                    .eq(Message::getIsRead, 0).set(Message::getIsRead, 1));
+        });
     }
 
     @Override

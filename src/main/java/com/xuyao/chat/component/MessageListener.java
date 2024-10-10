@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -21,6 +22,7 @@ public class MessageListener {
     private final BlockingQueue<Message> queue = new LinkedBlockingQueue<>();
 
     private final List<Message> messageList = new ArrayList<>(1000);
+    private final List<Message> readList = new ArrayList<>(1000);
 
     @EventListener
     public void onMessage(Message message){
@@ -31,7 +33,11 @@ public class MessageListener {
     public void saveJob(){
         Message message;
         while ((message = queue.poll()) != null){
-            messageList.add(message);
+            if(Objects.equals(message.getIsRead(), 1)){
+                readList.add(message);
+            }else{
+                messageList.add(message);
+            }
             if (messageList.size() == 1000){
                 messageService.saveBatch(messageList);
                 messageList.clear();
@@ -40,6 +46,10 @@ public class MessageListener {
         if (!messageList.isEmpty()){
             messageService.saveBatch(messageList);
             messageList.clear();
+        }
+        if (!readList.isEmpty()) {
+            messageService.read(readList);
+            readList.clear();
         }
     }
 

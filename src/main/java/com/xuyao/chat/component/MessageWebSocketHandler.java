@@ -22,21 +22,21 @@ public class MessageWebSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void handleTextMessage(WebSocketSession session, TextMessage message) {
-        Message msg = JsonUtil.parseObject(message.getPayload(), Message.class);
         logger.info("接收的消息：{}", message.getPayload());
+        Message msg = JsonUtil.parseObject(message.getPayload(), Message.class);
+        msg.setType(2);
+        msg.setFromId((Long) session.getAttributes().get("userId"));
+        msg.setCreateTime(LocalDateTime.now());
+        msg.setIsRead(0);
+        applicationEventPublisher.publishEvent(msg);
         WebSocketSession toSession;
         if((toSession = sessionMap.get(msg.getToId())) != null){
-            msg.setType(2);
-            msg.setFromId((Long) session.getAttributes().get("userId"));
-            msg.setCreateTime(LocalDateTime.now());
-            msg.setIsRead(0);
             TextMessage textMessage = new TextMessage(JsonUtil.toString(msg));
             try {
                 toSession.sendMessage(textMessage);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            applicationEventPublisher.publishEvent(msg);
         }else{
             logger.warn("未找到消息接收者，msg:{}", JsonUtil.toString(msg));
         }

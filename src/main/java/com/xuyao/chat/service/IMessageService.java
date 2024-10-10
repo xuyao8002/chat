@@ -15,6 +15,8 @@ public interface IMessageService extends IService<Message> {
 
     void read(Long fromId);
 
+    void read(List<Message> messages);
+
     Long unreadCount(Long fromId);
 
 }
