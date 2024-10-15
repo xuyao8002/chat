@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 @Data
 public class MessageVO {
 
+    private Long id;
     private Long fromId;
     private Long toId;
     private String msg;
