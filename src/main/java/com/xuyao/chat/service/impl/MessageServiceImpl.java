@@ -7,6 +7,7 @@ import com.xuyao.chat.bean.po.Message;
 import com.xuyao.chat.bean.vo.MessageVO;
 import com.xuyao.chat.bean.vo.UserVO;
 import com.xuyao.chat.dao.MessageMapper;
+import com.xuyao.chat.service.IBatchService;
 import com.xuyao.chat.service.IMessageService;
 import com.xuyao.chat.util.ContextUtil;
 import org.springframework.beans.BeanUtils;
@@ -23,6 +24,9 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message> impl
 
     @Resource
     private ApplicationEventPublisher applicationEventPublisher;
+
+    @Resource
+    private IBatchService batchService;
 
     @Override
     public boolean add(Message message) {
@@ -54,11 +58,9 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message> impl
     @Override
     @Transactional
     public void read(List<Message> messages) {
-        messages.forEach(message -> {
-            super.update(Wrappers.lambdaUpdate(Message.class).eq(Message::getFromId, message.getFromId())
+        batchService.update(MessageMapper.class, messages, message -> Wrappers.lambdaUpdate(Message.class).eq(Message::getFromId, message.getFromId())
                     .eq(Message::getToId, message.getToId()).eq(Message::getIsDelete, 0)
                     .eq(Message::getIsRead, 0).set(Message::getIsRead, 1));
-        });
     }
 
     @Override
