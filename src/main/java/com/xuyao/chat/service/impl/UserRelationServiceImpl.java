@@ -31,6 +31,9 @@ public class UserRelationServiceImpl extends ServiceImpl<UserRelationMapper, Use
             throw new RuntimeException("好友不存在");
         }
         UserVO user = ContextUtil.getUser();
+        if(user.getUserId().equals(friendId)){
+            throw new RuntimeException("不能添加自己");
+        }
         Long count = super.baseMapper.selectCount(Wrappers.lambdaQuery(UserRelation.class).eq(UserRelation::getUserId, user.getUserId())
                 .eq(UserRelation::getFriendId, friendId));
         if(count > 0){
