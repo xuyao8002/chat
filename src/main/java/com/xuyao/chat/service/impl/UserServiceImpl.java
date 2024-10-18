@@ -6,6 +6,7 @@ import com.xuyao.chat.bean.dto.Login;
 import com.xuyao.chat.bean.dto.Register;
 import com.xuyao.chat.bean.event.LoginEvent;
 import com.xuyao.chat.bean.po.User;
+import com.xuyao.chat.bean.vo.LoginVO;
 import com.xuyao.chat.bean.vo.UserVO;
 import com.xuyao.chat.dao.UserMapper;
 import com.xuyao.chat.service.IUserService;
@@ -49,7 +50,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     }
 
     @Override
-    public String login(Login login) {
+    public LoginVO login(Login login) {
         User one = super.getOne(Wrappers.lambdaQuery(User.class).eq(User::getUserName, login.getUserName()));
         if(one == null || !Objects.equals(one.getUserPwd(), DigestUtils.md5DigestAsHex(login.getUserPwd().getBytes()))){
             throw new RuntimeException("用户名或密码错误");
@@ -59,7 +60,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         String token = UUID.randomUUID().toString().replace("-", "");
         RedisUtil.set(token, JsonUtil.toString(userVO),120, TimeUnit.MINUTES);
         applicationEventPublisher.publishEvent(new LoginEvent(one.getUserId()));
-        return token;
+        return new LoginVO(one.getUserId(), token);
     }
 
     @Override

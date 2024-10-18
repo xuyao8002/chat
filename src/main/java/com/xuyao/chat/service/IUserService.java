@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.xuyao.chat.bean.dto.Login;
 import com.xuyao.chat.bean.dto.Register;
 import com.xuyao.chat.bean.po.User;
+import com.xuyao.chat.bean.vo.LoginVO;
 
 import java.util.List;
 import java.util.Map;
@@ -12,7 +13,7 @@ public interface IUserService extends IService<User> {
 
     boolean register(Register register);
 
-    String login(Login login);
+    LoginVO login(Login login);
 
     User get(Long userId);
 
