@@ -21,8 +21,9 @@ public class MessageListener {
 
     private final BlockingQueue<Message> queue = new LinkedBlockingQueue<>();
 
-    private final List<Message> messageList = new ArrayList<>(1000);
+    private final List<Message> saveList = new ArrayList<>(1000);
     private final List<Message> readList = new ArrayList<>(1000);
+    private final List<Message> deleteList = new ArrayList<>(1000);
 
     @EventListener
     public void onMessage(Message message){
@@ -35,21 +36,27 @@ public class MessageListener {
         while ((message = queue.poll()) != null){
             if(Objects.equals(message.getIsRead(), 1)){
                 readList.add(message);
+            }else if(Objects.equals(message.getIsDelete(), 1)){
+                deleteList.add(message);
             }else{
-                messageList.add(message);
+                saveList.add(message);
             }
-            if (messageList.size() == 1000){
-                messageService.saveBatch(messageList);
-                messageList.clear();
+            if (saveList.size() == 1000){
+                messageService.saveBatch(saveList);
+                saveList.clear();
             }
         }
-        if (!messageList.isEmpty()){
-            messageService.saveBatch(messageList);
-            messageList.clear();
+        if (!saveList.isEmpty()){
+            messageService.saveBatch(saveList);
+            saveList.clear();
         }
         if (!readList.isEmpty()) {
             messageService.read(readList);
             readList.clear();
+        }
+        if (!deleteList.isEmpty()) {
+            messageService.delete(deleteList);
+            deleteList.clear();
         }
     }
 

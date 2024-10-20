@@ -23,4 +23,9 @@ public class FriendController {
         return Result.success(userRelationService.list(lastId, size));
     }
 
+    @PostMapping("/delete")
+    public Object delete(@RequestParam Long friendId){
+        return Result.success(userRelationService.delete(friendId));
+    }
+
 }

@@ -19,4 +19,6 @@ public interface IMessageService extends IService<Message> {
 
     Long unreadCount(Long fromId);
 
+    void delete(List<Message> messages);
+
 }

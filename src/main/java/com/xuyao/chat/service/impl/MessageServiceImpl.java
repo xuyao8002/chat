@@ -13,7 +13,6 @@ import com.xuyao.chat.util.ContextUtil;
 import org.springframework.beans.BeanUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -56,7 +55,6 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message> impl
     }
 
     @Override
-    @Transactional
     public void read(List<Message> messages) {
         batchService.update(MessageMapper.class, messages, message -> Wrappers.lambdaUpdate(Message.class).eq(Message::getFromId, message.getFromId())
                     .eq(Message::getToId, message.getToId()).eq(Message::getIsDelete, 0)
@@ -70,5 +68,11 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message> impl
                 .eq(Message::getFromId, fromId).eq(Message::getToId, user.getUserId())
                 .eq(Message::getIsDelete, 0).eq(Message::getIsRead, 0)
                 .last("limit 100"));
+    }
+
+    @Override
+    public void delete(List<Message> messages) {
+        messages.forEach(message -> super.remove(Wrappers.lambdaUpdate(Message.class).eq(Message::getFromId, message.getFromId()).eq(Message::getToId, message.getToId())
+                .or(up -> up.eq(Message::getFromId, message.getToId()).eq(Message::getToId, message.getFromId()))));
     }
 }

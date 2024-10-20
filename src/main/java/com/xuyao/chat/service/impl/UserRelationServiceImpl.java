@@ -2,6 +2,7 @@ package com.xuyao.chat.service.impl;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.xuyao.chat.bean.po.Message;
 import com.xuyao.chat.bean.po.User;
 import com.xuyao.chat.bean.po.UserRelation;
 import com.xuyao.chat.bean.vo.UserRelationVO;
@@ -11,6 +12,7 @@ import com.xuyao.chat.service.IUserRelationService;
 import com.xuyao.chat.service.IUserService;
 import com.xuyao.chat.util.ContextUtil;
 import org.springframework.beans.BeanUtils;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -21,6 +23,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class UserRelationServiceImpl extends ServiceImpl<UserRelationMapper, UserRelation> implements IUserRelationService {
+
+    @Resource
+    private ApplicationEventPublisher applicationEventPublisher;
 
     @Resource
     private IUserService userService;
@@ -58,5 +63,20 @@ public class UserRelationServiceImpl extends ServiceImpl<UserRelationMapper, Use
             vo.setFriendName(userMap.get(relation.getFriendId()).getUserName());
             return vo;
         }).collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean delete(Long friendId) {
+        UserVO user = ContextUtil.getUser();
+        boolean removed = super.remove(Wrappers.lambdaUpdate(UserRelation.class).eq(UserRelation::getUserId, user.getUserId()).eq(UserRelation::getFriendId, friendId)
+                .or(up -> up.eq(UserRelation::getUserId, friendId).eq(UserRelation::getFriendId, user.getUserId())));
+        if(removed){
+            Message message = new Message();
+            message.setFromId(user.getUserId());
+            message.setToId(friendId);
+            message.setIsDelete(1);
+            applicationEventPublisher.publishEvent(message);
+        }
+        return removed;
     }
 }

@@ -12,4 +12,6 @@ public interface IUserRelationService extends IService<UserRelation> {
 
     List<UserRelationVO> list(Long lastId, Integer size);
 
+    boolean delete(Long friendId);
+
 }
