@@ -23,4 +23,6 @@ public interface IUserService extends IService<User> {
 
     Map<Long, User> userMap(List<Long> userIds);
 
+    boolean logout();
+
 }

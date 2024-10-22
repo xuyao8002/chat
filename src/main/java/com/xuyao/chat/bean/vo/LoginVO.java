@@ -13,5 +13,7 @@ public class LoginVO implements Serializable {
 
     private Long userId;
 
+    private String userName;
+
     private String token;
 }

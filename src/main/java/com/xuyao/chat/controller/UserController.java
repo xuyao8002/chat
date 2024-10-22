@@ -31,4 +31,9 @@ public class UserController {
         return Result.success(userService.get(userId));
     }
 
+    @PostMapping("/logout")
+    public Object logout(){
+        return Result.success(userService.logout());
+    }
+
 }

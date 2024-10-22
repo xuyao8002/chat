@@ -10,6 +10,7 @@ import com.xuyao.chat.bean.vo.UserVO;
 import com.xuyao.chat.dao.UserMapper;
 import com.xuyao.chat.service.IUserService;
 import com.xuyao.chat.service.SegmentService;
+import com.xuyao.chat.util.ContextUtil;
 import com.xuyao.chat.util.JsonUtil;
 import com.xuyao.chat.util.RedisUtil;
 import org.springframework.beans.BeanUtils;
@@ -57,9 +58,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         UserVO userVO = new UserVO();
         BeanUtils.copyProperties(one, userVO);
         String token = UUID.randomUUID().toString().replace("-", "");
+        userVO.setToken(token);
         RedisUtil.set(token, JsonUtil.toString(userVO),120, TimeUnit.MINUTES);
 //        applicationEventPublisher.publishEvent(new LoginEvent(one.getUserId()));
-        return new LoginVO(one.getUserId(), token);
+        return new LoginVO(one.getUserId(), one.getUserName(), token);
     }
 
     @Override
@@ -81,5 +83,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     public Map<Long, User> userMap(List<Long> userIds) {
         List<User> list = list(userIds);
         return list.stream().collect(Collectors.toMap(User::getUserId, user -> user));
+    }
+
+    @Override
+    public boolean logout() {
+        return RedisUtil.delete(ContextUtil.getUser().getToken());
     }
 }
