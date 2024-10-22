@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xuyao.chat.bean.dto.Login;
 import com.xuyao.chat.bean.dto.Register;
-import com.xuyao.chat.bean.event.LoginEvent;
 import com.xuyao.chat.bean.po.User;
 import com.xuyao.chat.bean.vo.LoginVO;
 import com.xuyao.chat.bean.vo.UserVO;
@@ -59,7 +58,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         BeanUtils.copyProperties(one, userVO);
         String token = UUID.randomUUID().toString().replace("-", "");
         RedisUtil.set(token, JsonUtil.toString(userVO),120, TimeUnit.MINUTES);
-        applicationEventPublisher.publishEvent(new LoginEvent(one.getUserId()));
+//        applicationEventPublisher.publishEvent(new LoginEvent(one.getUserId()));
         return new LoginVO(one.getUserId(), token);
     }
 
