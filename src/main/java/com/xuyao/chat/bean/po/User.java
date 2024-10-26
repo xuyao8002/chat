@@ -8,6 +8,9 @@ import lombok.Data;
 
 import java.io.Serializable;
 
+/**
+ * 用户表
+ */
 @Data
 @TableName("user")
 public class User implements Serializable {
@@ -15,12 +18,21 @@ public class User implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
+    /**
+     * 用户id
+     */
     @TableField("user_id")
     private Long userId;
 
+    /**
+     * 用户名
+     */
     @TableField("user_name")
     private String userName;
 
+    /**
+     * 用户密码
+     */
     @TableField("user_pwd")
     private String userPwd;
 }

@@ -9,8 +9,14 @@ public class UserVO implements Serializable {
 
     private Long id;
 
+    /**
+     * 用户id
+     */
     private Long userId;
 
+    /**
+     * 用户名
+     */
     private String userName;
 
     private String token;

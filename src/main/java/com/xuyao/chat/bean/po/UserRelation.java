@@ -11,6 +11,9 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 
+/**
+ * 用户关系表
+ */
 @Data
 @Builder
 @NoArgsConstructor
@@ -21,12 +24,21 @@ public class UserRelation implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
+    /**
+     * 用户id
+     */
     @TableField("user_id")
     private Long userId;
 
+    /**
+     * 好友id
+     */
     @TableField("friend_id")
     private Long friendId;
 
-    @TableField("deleted")
-    private Integer deleted;
+    /**
+     * 删除标识，0未删除，1已删除
+     */
+    @TableField("is_delete")
+    private Integer isDelete;
 }

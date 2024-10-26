@@ -54,7 +54,7 @@ public class UserRelationServiceImpl extends ServiceImpl<UserRelationMapper, Use
     public List<UserRelationVO> list(Long lastId, Integer size) {
         UserVO user = ContextUtil.getUser();
         List<UserRelation> userRelations = baseMapper.selectList(Wrappers.lambdaQuery(UserRelation.class).eq(UserRelation::getUserId, user.getUserId())
-                .eq(UserRelation::getDeleted, 0).gt(UserRelation::getFriendId, lastId)
+                .eq(UserRelation::getIsDelete, 0).gt(UserRelation::getFriendId, lastId)
                 .orderByAsc(UserRelation::getFriendId).last("limit " + size));
         Map<Long, User> userMap = userService.userMap(userRelations.stream().map(UserRelation::getFriendId).collect(Collectors.toList()));
         return userRelations.stream().map(relation -> {
